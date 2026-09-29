@@ -103,6 +103,30 @@ jobs:
                       name: hacker-news-auth-svc
                       port:
                         number: 80
+          ---
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: hacker-news-auth-double-prefix
+            namespace: ${NAMESPACE}
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+              kubernetes.io/ingress.class: nginx
+              nginx.ingress.kubernetes.io/ssl-redirect: "true"
+              nginx.ingress.kubernetes.io/use-regex: "true"
+              nginx.ingress.kubernetes.io/rewrite-target: /\$2
+          spec:
+            rules:
+            - host: ${PUBLIC_HOST}
+              http:
+                paths:
+                - path: /${NAMESPACE}/auth/${NAMESPACE}(/|$)(.*)
+                  pathType: ImplementationSpecific
+                  backend:
+                    service:
+                      name: hacker-news-auth-svc
+                      port:
+                        number: 80
           EOF
 
           kubectl rollout status deployment/hacker-news-auth -n "$NAMESPACE" --timeout=5m
